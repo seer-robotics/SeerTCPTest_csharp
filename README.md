@@ -1,3 +1,3 @@
 # SeerTCPTest_csharp
 
-![avatar](shotcut.png)
+![Image shortcut](https://raw.githubusercontent.com/seer-robotics/SeerTCPTest_csharp/master/shortcut.png)

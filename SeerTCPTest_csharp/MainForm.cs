@@ -20,13 +20,13 @@ namespace SeerTCPTest_csharp
         public UInt16 number;
         public UInt32 length;
         public UInt16 type;
-        public byte ref0;
-        public byte ref1;
-        public byte ref2;
-        public byte ref3;
-        public byte ref4;
-        public byte ref5;
-        
+        private byte ref0;      //保留
+        private byte ref1;      //保留
+        private byte ref2;      //保留
+        private byte ref3;      //保留
+        private byte ref4;      //保留
+        private byte ref5;      //保留
+
     };
     public struct SeerMessage
     {
@@ -48,7 +48,6 @@ namespace SeerTCPTest_csharp
         //
         public static T bytesToStructure<T>(byte[] bytesBuffer)
         {
-            // 检查长度。
             if (bytesBuffer.Length < Marshal.SizeOf(typeof(T)))
             {
                 throw new ArgumentException("size error");
@@ -236,62 +235,56 @@ namespace SeerTCPTest_csharp
 
                     var recv_head = bytesToStructure<SeerMessageHead>(inStream);
 
-                    textBox_recv_head.Text = normalStrToHexStr(Encoding.UTF8.GetString(seerMessageHeadToBytes(recv_head)));
+                 
 
                     byte[] recvbyte = BitConverter.GetBytes(recv_head.length);
 
                     Array.Reverse(recvbyte);
 
-                    var dsize = BitConverter.ToInt32(recvbyte,0);
+                    var dsize = BitConverter.ToUInt32(recvbyte,0);
+                    
 
                     byte[] dataStream = new byte[dsize];
-                    int asize = serverStream.Read(dataStream, 0, dsize);
-                    Console.WriteLine(asize);
-                    Console.WriteLine(dataStream);
+                    int asize = serverStream.Read(dataStream, 0, (int)dsize);
+
+                    //Console.WriteLine(BitConverter.ToString(seerMessageHeadToBytes(recv_head)));
+                    textBox_recv_head.Text = BitConverter.ToString(seerMessageHeadToBytes(recv_head)).Replace("-", " ");//normalStrToHexStr(Encoding.UTF8.GetString(seerMessageHeadToBytes(recv_head)));
 
                     string str = Encoding.UTF8.GetString(dataStream);
-                    Console.WriteLine(str);
 
                     textBox_recv_data.Invoke(new EventHandler(delegate { textBox_recv_data.Text = str; }));
-
-
-                //    serverStream.Close();
 
                 }
                 catch
                 {
-                    textBox_recv_data.Invoke(new EventHandler(delegate { textBox_recv_data.Text = "error"; }));
+                    textBox_recv_data.Invoke(new EventHandler(delegate { textBox_recv_data.Text = ""; }));
+                    textBox_recv_head.Invoke(new EventHandler(delegate { textBox_recv_head.Text = ""; }));
                 }
             }
         }
 
         private void textBox_req_head_TextChanged(object sender, EventArgs e)
         {
-            textBox_req_data.Invoke(new EventHandler(delegate { textBox_req_data.Text = ""; }));
+         //   textBox_req_data.Invoke(new EventHandler(delegate { textBox_req_data.Text = ""; }));
         }
+
 
         private void textBox_req_data_TextChanged(object sender, EventArgs e)
         {
             var dsize = textBox_req_data.Text.Trim().Length;
 
-            try
-            {
                 var head = bytesToStructure<SeerMessageHead>(hexStrTobyte(textBox_req_head.Text.Trim()));
-
-                byte[] vv = BitConverter.GetBytes(dsize);
-                Array.Reverse(vv);
+                
+                byte[] vv = hexStrTobyte(dsize.ToString("X8"));
+             
                 head.length = BitConverter.ToUInt32(vv,0);
 
                 textBox_req_head.Invoke(new EventHandler(delegate 
                 {
                     this.textBox_req_head.TextChanged -= new EventHandler(textBox_req_head_TextChanged);
-                    textBox_req_head.Text = normalStrToHexStr(Encoding.UTF8.GetString(seerMessageHeadToBytes(head)));
+                    textBox_req_head.Text = BitConverter.ToString(seerMessageHeadToBytes(head)).Replace("-", " ");
                     this.textBox_req_head.TextChanged += new EventHandler(textBox_req_head_TextChanged);
-                }));
-            }
-            catch
-            {
-            }            
+                }));      
         }
     }
 }

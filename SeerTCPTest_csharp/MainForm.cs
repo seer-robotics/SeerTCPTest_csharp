@@ -188,10 +188,8 @@ namespace SeerTCPTest_csharp
                 {
                     return;
                 }
-
                 System.Threading.Thread.Sleep(10);
             }
-
             _thread = null;
         }
 
@@ -221,13 +219,13 @@ namespace SeerTCPTest_csharp
                 {
                     NetworkStream serverStream = _tcpClient.GetStream();
 
-                    var tt = new SeerMessage();
+                    var newmsg = new SeerMessage();
 
-                    tt.head = bytesToStructure<SeerMessageHead>(hexStrTobyte(textBox_req_head.Text.Trim()));
-                    tt.data = normalStrToHexByte(textBox_req_data.Text.Trim());
+                    newmsg.head = bytesToStructure<SeerMessageHead>(hexStrTobyte(textBox_req_head.Text.Trim()));
+                    newmsg.data = normalStrToHexByte(textBox_req_data.Text.Trim());
 
-                    serverStream.Write(seerMessageHeadToBytes(tt.head), 0, Marshal.SizeOf(tt.head));
-                    serverStream.Write(tt.data, 0, tt.data.Length);
+                    serverStream.Write(seerMessageHeadToBytes(newmsg.head), 0, Marshal.SizeOf(newmsg.head));
+                    serverStream.Write(newmsg.data, 0, newmsg.data.Length);
                     serverStream.Flush();
 
                     byte[] inStream = new byte[16];
@@ -235,14 +233,13 @@ namespace SeerTCPTest_csharp
 
                     var recv_head = bytesToStructure<SeerMessageHead>(inStream);
 
-                 
-
                     byte[] recvbyte = BitConverter.GetBytes(recv_head.length);
 
                     Array.Reverse(recvbyte);
 
                     var dsize = BitConverter.ToUInt32(recvbyte,0);
-                    
+
+                    Thread.Sleep(20);                    
 
                     byte[] dataStream = new byte[dsize];
                     int asize = serverStream.Read(dataStream, 0, (int)dsize);

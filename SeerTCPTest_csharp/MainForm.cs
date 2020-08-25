@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
+using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SeerTCPTest_csharp
@@ -40,8 +36,6 @@ namespace SeerTCPTest_csharp
 
     public partial class MainForm : Form
     {
-        public TcpClient _tcpClient;
-        public Thread _thread;
 
         internal bool _queueStop { get; set; }
 
@@ -98,7 +92,7 @@ namespace SeerTCPTest_csharp
 
         private byte[] normalStrToHexByte(string str)
         {
-              byte[] result = new byte[str.Length];
+            byte[] result = new byte[str.Length];
 
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(str);
             for (int i = 0; i < buffer.Length; i++)
@@ -125,99 +119,16 @@ namespace SeerTCPTest_csharp
             InitializeComponent();
         }
 
-        public MainForm tcpConnet()
-        {
-            _tcpClient = new TcpClient();
-            try
-            {
-                _tcpClient.Connect(textBox_ip.Text.Trim(), Convert.ToInt32(textBox_port.Text.Trim()));
-
-                if (_tcpClient.Connected)
-                {
-                    button_conn.Invoke(new EventHandler(delegate
-                    {
-                        button_conn.Text = "断开";
-                    }));
-
-                    if (_thread == null)
-                    {
-                        _thread = new Thread(listenerLoop);
-                        _thread.IsBackground = true;
-                        _thread.Start();
-                        Console.WriteLine("thread start .. ");
-                    }
-                }
-            }
-            catch
-            {
-                Console.WriteLine("connect error ");
-            }
-
-            return this;
-        }
-
-        public MainForm tcpDisConnect()
-        {
-            if (_tcpClient != null && _tcpClient.Connected)
-            {
-                _tcpClient.Close();
-                _tcpClient = null;
-                button_conn.Invoke(new EventHandler(delegate {
-                    button_conn.Text = "连接";
-                }));
-            }
-            return this;
-        }
-
-        private void listenerLoop(object state)
-        {
-            while (!_queueStop)
-            {
-                try
-                {
-                    if (_tcpClient != null && _tcpClient.Connected)
-                    {
-                        int bytesAvailable = _tcpClient.Available;
-                        if (bytesAvailable == 0)
-                        {
-                            System.Threading.Thread.Sleep(10);
-                        }
-                    }
-                }
-                catch
-                {
-                    return;
-                }
-                System.Threading.Thread.Sleep(10);
-            }
-            _thread = null;
-        }
-
-        private void button_conn_Click(object sender, EventArgs e)
-        {
-            if (_tcpClient!=null && _tcpClient.Connected)
-            {
-                tcpDisConnect();
-            }
-            else
-            {
-                tcpConnet();
-            }
-            
-        }
-
         private void button_send_Click(object sender, EventArgs e)
         {
-            if (_tcpClient == null || !_tcpClient.Connected)
+            textBox_recv_data.Invoke(new EventHandler(delegate { textBox_recv_data.Text = "loading..."; }));
+     
+            try
             {
-                tcpConnet();
-            }
-
-            if (_tcpClient != null && _tcpClient.Connected)
-            {
-                try
+                TcpClient client = new TcpClient(textBox_ip.Text.Trim(), Convert.ToInt32(textBox_port.Text.Trim()));
+                if (client.Connected)
                 {
-                    NetworkStream serverStream = _tcpClient.GetStream();
+                    NetworkStream serverStream = client.GetStream();
 
                     var newmsg = new SeerMessage();
 
@@ -229,7 +140,10 @@ namespace SeerTCPTest_csharp
                     serverStream.Flush();
 
                     byte[] inStream = new byte[16];
-                    int tsize = serverStream.Read(inStream, 0, 16);
+                    while (16 != serverStream.Read(inStream, 0, 16))
+                    {
+                        Thread.Sleep(20);
+                    }
 
                     var recv_head = bytesToStructure<SeerMessageHead>(inStream);
 
@@ -237,51 +151,62 @@ namespace SeerTCPTest_csharp
 
                     Array.Reverse(recvbyte);
 
-                    var dsize = BitConverter.ToUInt32(recvbyte,0);
+                    var dsize = BitConverter.ToUInt32(recvbyte, 0);
 
-                    Thread.Sleep(20);                    
+                    const int bufferSize = 512;
+                    List<byte> datalist = new List<byte>();
+                    int count = 0;
+                    
+                    while (true)
+                    {
+                        byte[] buffer = new byte[bufferSize];
+                        int readSize = serverStream.Read(buffer, 0, bufferSize);
 
-                    byte[] dataStream = new byte[dsize];
-                    int asize = serverStream.Read(dataStream, 0, (int)dsize);
+                        count += readSize;
+                        datalist.AddRange(buffer);
 
-                    //Console.WriteLine(BitConverter.ToString(seerMessageHeadToBytes(recv_head)));
+                        if (count == dsize) {
+                            break;
+                        }
+
+                        Thread.Sleep(10);
+                    }
+                    
                     textBox_recv_head.Text = BitConverter.ToString(seerMessageHeadToBytes(recv_head)).Replace("-", " ");//normalStrToHexStr(Encoding.UTF8.GetString(seerMessageHeadToBytes(recv_head)));
 
-                    string str = Encoding.UTF8.GetString(dataStream);
+                    string str = System.Text.Encoding.UTF8.GetString(datalist.ToArray());
 
                     textBox_recv_data.Invoke(new EventHandler(delegate { textBox_recv_data.Text = str; }));
 
-                }
-                catch
-                {
-                    textBox_recv_data.Invoke(new EventHandler(delegate { textBox_recv_data.Text = ""; }));
-                    textBox_recv_head.Invoke(new EventHandler(delegate { textBox_recv_head.Text = ""; }));
+                    client.Close();
                 }
             }
+            catch (SocketException)
+            {
+                textBox_recv_data.Invoke(new EventHandler(delegate { textBox_recv_data.Text = ""; }));
+                MessageBox.Show("Connect Error!");
+            }
+            catch (IOException)
+            {
+                textBox_recv_data.Invoke(new EventHandler(delegate { textBox_recv_data.Text = ""; }));
+                MessageBox.Show("");
+            }
         }
-
-        private void textBox_req_head_TextChanged(object sender, EventArgs e)
-        {
-         //   textBox_req_data.Invoke(new EventHandler(delegate { textBox_req_data.Text = ""; }));
-        }
-
 
         private void textBox_req_data_TextChanged(object sender, EventArgs e)
         {
             var dsize = textBox_req_data.Text.Trim().Length;
 
-                var head = bytesToStructure<SeerMessageHead>(hexStrTobyte(textBox_req_head.Text.Trim()));
+            var head = bytesToStructure<SeerMessageHead>(hexStrTobyte(textBox_req_head.Text.Trim()));
                 
-                byte[] vv = hexStrTobyte(dsize.ToString("X8"));
+            byte[] vv = hexStrTobyte(dsize.ToString("X8"));
              
-                head.length = BitConverter.ToUInt32(vv,0);
+            head.length = BitConverter.ToUInt32(vv,0);
 
-                textBox_req_head.Invoke(new EventHandler(delegate 
-                {
-                    this.textBox_req_head.TextChanged -= new EventHandler(textBox_req_head_TextChanged);
-                    textBox_req_head.Text = BitConverter.ToString(seerMessageHeadToBytes(head)).Replace("-", " ");
-                    this.textBox_req_head.TextChanged += new EventHandler(textBox_req_head_TextChanged);
-                }));      
+            textBox_req_head.Invoke(new EventHandler(delegate 
+            {
+                textBox_req_head.Text = BitConverter.ToString(seerMessageHeadToBytes(head)).Replace("-", " ");
+            }));      
         }
     }
 }

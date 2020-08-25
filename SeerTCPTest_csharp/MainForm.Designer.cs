@@ -37,7 +37,6 @@
             this.label3 = new System.Windows.Forms.Label();
             this.textBox_ip = new System.Windows.Forms.TextBox();
             this.textBox_port = new System.Windows.Forms.TextBox();
-            this.button_conn = new System.Windows.Forms.Button();
             this.button_send = new System.Windows.Forms.Button();
             this.groupBox_conn = new System.Windows.Forms.GroupBox();
             this.groupBox_req.SuspendLayout();
@@ -68,7 +67,6 @@
             this.textBox_req_head.Size = new System.Drawing.Size(953, 25);
             this.textBox_req_head.TabIndex = 2;
             this.textBox_req_head.Text = "5A 01 00 01 00 00 00 16 04 4C 00 00 00 00 00 00";
-            this.textBox_req_head.TextChanged += new System.EventHandler(this.textBox_req_head_TextChanged);
             // 
             // textBox_req_data
             // 
@@ -151,19 +149,9 @@
             this.textBox_port.TabIndex = 2;
             this.textBox_port.Text = "19204";
             // 
-            // button_conn
-            // 
-            this.button_conn.Location = new System.Drawing.Point(231, 26);
-            this.button_conn.Name = "button_conn";
-            this.button_conn.Size = new System.Drawing.Size(75, 23);
-            this.button_conn.TabIndex = 4;
-            this.button_conn.Text = "连接";
-            this.button_conn.UseVisualStyleBackColor = true;
-            this.button_conn.Click += new System.EventHandler(this.button_conn_Click);
-            // 
             // button_send
             // 
-            this.button_send.Location = new System.Drawing.Point(331, 26);
+            this.button_send.Location = new System.Drawing.Point(231, 26);
             this.button_send.Name = "button_send";
             this.button_send.Size = new System.Drawing.Size(75, 23);
             this.button_send.TabIndex = 5;
@@ -177,7 +165,6 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox_conn.AutoSize = true;
             this.groupBox_conn.Controls.Add(this.button_send);
-            this.groupBox_conn.Controls.Add(this.button_conn);
             this.groupBox_conn.Controls.Add(this.textBox_port);
             this.groupBox_conn.Controls.Add(this.textBox_ip);
             this.groupBox_conn.Controls.Add(this.label3);
@@ -195,7 +182,7 @@
             this.Controls.Add(this.groupBox_req);
             this.Controls.Add(this.groupBox_conn);
             this.Name = "MainForm";
-            this.Text = "Seer Robotics Tcp Demo (C#)";
+            this.Text = "SEER Tcp Demo (C#) 20200825-01";
             this.groupBox_req.ResumeLayout(false);
             this.groupBox_req.PerformLayout();
             this.groupBox_recv.ResumeLayout(false);
@@ -218,7 +205,6 @@
         private System.Windows.Forms.TextBox textBox_req_head;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox textBox_ip;
-        private System.Windows.Forms.Button button_conn;
         private System.Windows.Forms.Button button_send;
         private System.Windows.Forms.GroupBox groupBox_conn;
         private System.Windows.Forms.TextBox textBox_recv_head;
